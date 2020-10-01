@@ -64,15 +64,30 @@ int main( int argc, char* argv[] ) {
 	fprintf ( stderr, "Connection successful.\n" );
 
 	rcon_packet_t pack = {0,1337,RCON_LOGIN,args.password, strlen(args.password)}, rcon_result;
+	ret = rcon_construct_packet ( sendbuf, RCON_SEND_PKGSIZE, &pack );
 
 	ret = send ( sock, sendbuf, ret, 0 );
 
 	ret = recv ( sock, recvbuf, RCON_RECV_PKGSIZE, 0);
 	rcon_parse_packet ( &rcon_result, recvbuf, ret );
 
-	close (sock);
+	if ( rcon_result.type != RCON_COMMAND ) {
+		fprintf ( stderr, "Authentification failed." );
+		exit ( EXIT_FAILURE );
+	}
 
-	//printf("%s\n%s", sendbuf, recvbuf);
+	rcon_packet_t pack2 = {0,6969,RCON_COMMAND, args.command, strlen(args.command)};
+
+	ret = rcon_construct_packet ( sendbuf, RCON_SEND_PKGSIZE, &pack2 );
+
+	ret = send ( sock, sendbuf, ret, 0 );
+
+	ret = recv ( sock, recvbuf, RCON_RECV_PKGSIZE, 0);
+	rcon_parse_packet ( &rcon_result, recvbuf, ret );
+
+	printf("%s\n", rcon_result.payload);
+
+	close (sock);
 
 	return 0;
 }
