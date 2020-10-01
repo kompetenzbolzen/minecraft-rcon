@@ -1,7 +1,7 @@
 /*
  * src/rcon.c
  * (c) 2020 Jonas Gunz <himself@jonasgunz.de>
- * License: 
+ * License: MIT
 */
 
 /*
