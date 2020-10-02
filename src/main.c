@@ -121,7 +121,7 @@ void print_help ( char* _progname ) {
 	printf(
 			"Minecraft RCON client\n"
 			"Usage:\n"
-			"	%s HOST PORT PASSWORD COMMAND",
+			"	%s HOST PORT PASSWORD COMMAND ...",
 			_progname
 	      );
 }
