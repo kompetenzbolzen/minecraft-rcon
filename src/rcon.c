@@ -22,12 +22,14 @@
 
 #include "rcon.h"
 
-static char* rcon_errors[] = {
-	"No Error.",
-	"Undefined Error.",
-	"Login Denied.",
-	"Buffer size incorrect.",
-	"Malformed packet recieved."
+static const unsigned int rcon_errors_len = 6;
+static const char* rcon_errors[] = {
+	"OK",
+	"Undefined error",
+	"Authentification failed",
+	"Inadequate buffer",
+	"Packet format error",
+	"Connection timed out"
 };
 
 static int rcon_write_int ( char* _buffer, int _len, int32_t _data ) {
@@ -92,6 +94,111 @@ int rcon_construct_packet ( char* _buffer, uint32_t _len, rcon_packet_t* _packet
 	return bytecount;
 }
 
-char* rcon_strerror ( int _errno ) {
-	return _errno > 4 ? rcon_errors[1] : rcon_errors[_errno];
+const char* rcon_strerror ( int _errno ) {
+	return _errno >= rcon_errors_len ? rcon_errors[1] : rcon_errors[_errno];
+}
+
+// For packets created by rcon_parse_packet()
+void rcon_free_packet ( rcon_packet_t* _packet ) {
+	if ( ! _packet || ! _packet->payload )
+		return;
+
+	free ( _packet->payload );
+	_packet->payload = NULL;
+	_packet->payload_len = 0;
+}
+
+//returns 0 on success
+int rcon_send_packet ( int _socket, rcon_packet_t* _packet ) {
+	char buff [ RCON_SEND_PKGSIZE ];
+	int ret;
+	if ( _socket < 0 || !_packet )
+		return RCON_ERR_GENERIC;
+
+	if( ! ((ret = rcon_construct_packet ( buff, RCON_SEND_PKGSIZE, _packet )) > 0) )
+		return RCON_ERR_PACKET;
+	if ( send ( _socket, buff, ret, 0 ) > 0 )
+		return 0;
+
+	return RCON_ERR_GENERIC;
+}
+
+//returns 0 on success
+int rcon_recv_packet ( int _socket, rcon_packet_t* _packet, int _timeout_msecs ) {
+	char buff [ RCON_SEND_PKGSIZE ];
+	int ret;
+	struct pollfd fds;
+
+	if ( _socket < 0 || !_packet )
+		return RCON_ERR_GENERIC;
+
+	fds.fd = _socket;
+	fds.events = POLLIN;
+
+	ret = poll ( &fds, 1, _timeout_msecs );
+	if ( ret > 0 && fds.revents & POLLIN) {
+		ret = recv ( _socket, buff, RCON_RECV_PKGSIZE, 0 );
+		if ( ! (rcon_parse_packet ( _packet, buff, ret ) > 0) )
+			return RCON_ERR_PACKET;
+
+		return 0;
+	}
+
+	return RCON_ERR_TIMEOUT; //timeout
+}
+
+int rcon_login ( int _socket, const char* _password ) {
+	int ret;
+	rcon_packet_t result, request = {
+		0,
+		1337, // TODO remove hardcoded ID
+		RCON_LOGIN,
+		(char*) _password,
+		strlen(_password)
+	};
+
+	if ( _socket < 0 || !_password )
+		return RCON_ERR_GENERIC;
+
+	if ( (ret = rcon_send_packet ( _socket, &request )) )
+		return ret;
+
+	if ( (ret = rcon_recv_packet ( _socket, &result, 1000 )) )
+		return ret;
+
+	if ( result.type != RCON_COMMAND || result.id != 1337 )
+		return RCON_ERR_AUTH;
+
+	return 0;
+}
+
+int rcon_command ( char** _output, int _socket, const char* _command ) {
+	int ret;
+	if ( _socket < 0 || !_command )
+		return RCON_ERR_GENERIC;
+
+	rcon_packet_t result, request = {
+		0,
+		1337, // TODO remove hardcoded ID
+		RCON_COMMAND,
+		(char*) _command, //NONONONONONONONONONONO
+		strlen(_command)
+	};
+
+	if ( (ret = rcon_send_packet ( _socket, &request )) )
+		return ret;
+
+	if ( (ret = rcon_recv_packet ( _socket, &result, 1000 )) )
+		return ret;
+
+	// TODO truncated response
+	*_output = malloc ( result.payload_len + 1 );
+	*_output[result.payload_len] = 0;
+	memcpy ( *_output, result.payload, result.payload_len );
+	rcon_free_packet ( &result );
+
+	if ( result.type != RCON_RESPONSE || result.id != 1337 )
+		return RCON_ERR_PACKET;
+
+	return 0;
 }
