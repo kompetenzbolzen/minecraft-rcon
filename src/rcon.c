@@ -58,7 +58,7 @@ int rcon_parse_packet ( rcon_packet_t* _packet, char* _buffer, uint32_t _len ) {
 		return -1;
 
 	int32_t bytecount = 0;
-	
+
 	bytecount += rcon_read_int ( _buffer + bytecount, _len - bytecount, &_packet->length );
 	bytecount += rcon_read_int ( _buffer + bytecount, _len - bytecount, &_packet->id );
 	bytecount += rcon_read_int ( _buffer + bytecount, _len - bytecount, &_packet->type );

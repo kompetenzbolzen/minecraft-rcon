@@ -22,7 +22,6 @@
 #include <sys/socket.h>
 
 #define RCON_LOGIN	3
-#define RCON_LOLGINFAIL	-1
 #define RCON_COMMAND	2
 #define RCON_RESPONSE	0
 
