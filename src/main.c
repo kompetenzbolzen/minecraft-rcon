@@ -122,7 +122,7 @@ int connect_socket ( char* _host, char* _port ) {
 }
 
 void print_help ( char* _progname ) {
-	printf(
+	fprintf( stderr,
 			"Minecraft RCON client\n"
 			"Usage:\n"
 			"	%s HOST PORT PASSWORD COMMAND ...",

@@ -12,7 +12,9 @@
  * 2-byte pad 	byte^2 	Two null bytes
  *
  * sizeof int: 4B
- * */
+ */
+
+#pragma once
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -43,17 +45,30 @@ typedef struct rcon_packet_s {
 	uint32_t	payload_len;
 } rcon_packet_t;
 
+/**
+ * Authenticate RCON connection
+ */
+int rcon_login ( int _socket, const char* _password );
+
+/**
+ * Send command via authenticated RCON connection
+ * Result is written to _output.
+ */
+int rcon_command ( char** _output, int _socket, const char* _command );
+
+/**
+ * Get rcon_* return code string representation
+ */
+const char* rcon_strerror ( int _errno );
+
+/**
+ * rcon_login and rcon_command are wrappers around the following functions
+ */
+
 int rcon_parse_packet ( rcon_packet_t* _packet, char* _buffer, uint32_t _len );
 
 int rcon_construct_packet ( char* _buffer, uint32_t _len, rcon_packet_t* _packet );
 
-int rcon_login ( int _socket, const char* _password );
-
-int rcon_command ( char** _output, int _socket, const char* _command );
-
 int rcon_recv_packet ( int _socket, rcon_packet_t* _packet, int _timeout_msecs );
 
 int rcon_send_packet ( int _socket, rcon_packet_t* _packet );
-
-const char* rcon_strerror ( int _errno );
-
