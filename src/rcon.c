@@ -191,9 +191,12 @@ int rcon_command ( char** _output, int _socket, const char* _command ) {
 	if ( (ret = rcon_recv_packet ( _socket, &result, 1000 )) )
 		return ret;
 
+	if ( ! result.payload_len )
+		return RCON_ERR_GENERIC;
+
 	// TODO truncated response
 	*_output = malloc ( result.payload_len + 1 );
-	*_output[result.payload_len] = 0;
+	(*_output)[result.payload_len] = 0;
 	memcpy ( *_output, result.payload, result.payload_len );
 	rcon_free_packet ( &result );
 

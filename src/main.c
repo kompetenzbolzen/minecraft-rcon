@@ -31,19 +31,23 @@ int connect_socket ( char* _host, char* _port );
 void print_help ( char* _progname );
 
 int main( int argc, char* argv[] ) {
-	program_params_t args = parse_args( argc, argv );
+	program_params_t args;
+	int ret, sock;
+	char* result;
 
-	int sock = connect_socket ( args.host, args.port );
+	args = parse_args( argc, argv );
+	sock = connect_socket ( args.host, args.port );
+	result = NULL;
 
-	fprintf ( stderr, "Connection successful.\n" );
-
-	if ( rcon_login ( sock, args.password ) ) {
-		fprintf ( stderr, "Authentification failed.\n" );
+	if ( (ret = rcon_login ( sock, args.password )) ) {
+		fprintf ( stderr, "rcon_login: %s\n", rcon_strerror ( ret ) );
 		exit ( EXIT_FAILURE );
 	}
 
-	char* result = NULL;
-        rcon_command ( &result, sock, args.command );
+	if ( (ret = rcon_command ( &result, sock, args.command )) ) {
+		fprintf ( stderr, "rcon_command: %s\n", rcon_strerror ( ret ) );
+		exit ( EXIT_FAILURE );
+	}
 
 	printf("%s\n", result);
 
@@ -124,4 +128,5 @@ void print_help ( char* _progname ) {
 			"	%s HOST PORT PASSWORD COMMAND ...",
 			_progname
 	      );
+	exit ( EXIT_FAILURE );
 }
