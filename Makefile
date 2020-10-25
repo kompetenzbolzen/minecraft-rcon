@@ -7,6 +7,8 @@ OBJECTDIR       = obj
 
 OUTPUT          = rcon
 
+PREFIX          = /
+
 SRCS = $(wildcard $(SOURCEDIR)/*.c)
 OBJS = $(SRCS:.c=.o)
 OBJ  = $(OBJS:$(SOURCEDIR)/%=$(OBJECTDIR)/%)
@@ -37,3 +39,7 @@ all: clean build
 
 run: build
 	@$(BUILDDIR)/$(OUTPUT)
+
+install: build
+	@strip $(BUILDDIR)/$(OUTPUT)
+	@install $(BUILDDIR)/$(OUTPUT) $(PREFIX)/bin/$(OUTPUT)
